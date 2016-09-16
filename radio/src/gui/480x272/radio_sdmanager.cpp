@@ -228,6 +228,9 @@ bool menuRadioSdManager(event_t _event)
             POPUP_MENU_ADD_ITEM(STR_EXECUTE_FILE);
           }
 #endif
+          else if (!READ_ONLY() && !strcasecmp(ext, SPORT_FIRMWARE_EXT)) {
+            POPUP_MENU_ADD_ITEM(STR_FLASH_EXTERNAL_DEVICE);
+          }
         }
         if (!READ_ONLY()) {
           if (IS_FILE(line))
