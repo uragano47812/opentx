@@ -711,7 +711,7 @@ int cliDisplay(const char ** argv)
   else if (!strcmp(argv[1], "dc")) {
     DiskCacheStats stats = diskCache.getStats();
     uint32_t hitRate = diskCache.getHitRate();
-    serialPrint("Disk Cache stats: reads: %u, hits: %u, hit rate: %0.1f%%", (stats.noHits + stats.noMisses), stats.noHits, hitRate/10.0);
+    serialPrint("Disk Cache stats: reads: %u, hits: %u, misses: %u, hit rate: %0.1f%%", (stats.noHits + stats.noMisses), stats.noHits, stats.noMisses, hitRate/10.0);
   }
 #endif
   else if (toLongLongInt(argv, 1, &address) > 0) {
