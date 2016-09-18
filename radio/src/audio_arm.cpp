@@ -552,12 +552,16 @@ int WavContext::mixBuffer(AudioBuffer *buffer, int volume, unsigned int fade)
   if (fragment.file[1]) {
     DEBUG_TIMER_START(debugTimerAudioMixOpen);
     DEBUG_TIMER_START(debugTimerAudioMixOpen1);
+    CoTaskSwitchHook(11);
     result = f_open(&state.file, fragment.file, FA_OPEN_EXISTING | FA_READ);
+    CoTaskSwitchHook(12);
     DEBUG_TIMER_STOP(debugTimerAudioMixOpen1);
     fragment.file[1] = 0;
     if (result == FR_OK) {
       DEBUG_TIMER_START(debugTimerAudioMixOpenRead1);
+      CoTaskSwitchHook(22);
       result = f_read(&state.file, wavBuffer, RIFF_CHUNK_SIZE+8, &read);
+      CoTaskSwitchHook(33);
       DEBUG_TIMER_STOP(debugTimerAudioMixOpenRead1);
       if (result == FR_OK && read == RIFF_CHUNK_SIZE+8 && !memcmp(wavBuffer, "RIFF", 4) && !memcmp(wavBuffer+8, "WAVEfmt ", 8)) {
         uint32_t size = *((uint32_t *)(wavBuffer+16));
@@ -641,7 +645,7 @@ int WavContext::mixBuffer(AudioBuffer *buffer, int volume, unsigned int fade)
         }
       }
       DEBUG_TIMER_STOP(debugTimerAudioMixResample);
-
+      CoTaskSwitchHook(44);
       return samples - buffer->data;
     }
   }

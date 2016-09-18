@@ -3241,6 +3241,7 @@ FRESULT f_mount (
 /*-----------------------------------------------------------------------*/
 /* Open or Create a File                                                 */
 /*-----------------------------------------------------------------------*/
+extern void CoTaskSwitchHook(BYTE taskID);
 
 FRESULT f_open (
 	FIL* fp,			/* Pointer to the blank file object */
@@ -3263,10 +3264,13 @@ FRESULT f_open (
 	/* Get logical drive */
 	mode &= _FS_READONLY ? FA_READ : FA_READ | FA_WRITE | FA_CREATE_ALWAYS | FA_CREATE_NEW | FA_OPEN_ALWAYS | FA_OPEN_APPEND | FA_SEEKEND;
 	res = find_volume(&path, &fs, mode);
+	CoTaskSwitchHook(51);
 	if (res == FR_OK) {
 		dj.obj.fs = fs;
 		INIT_NAMBUF(fs);
+		CoTaskSwitchHook(52);
 		res = follow_path(&dj, path);	/* Follow the file path */
+		CoTaskSwitchHook(53);
 #if !_FS_READONLY	/* R/W configuration */
 		if (res == FR_OK) {
 			if (dj.fn[NSFLAG] & NS_NONAME) {	/* Origin directory itself? */
@@ -3390,6 +3394,7 @@ FRESULT f_open (
 			{
 				fp->obj.sclust = ld_clust(fs, dj.dir);				/* Get allocation info */
 				fp->obj.objsize = ld_dword(dj.dir + DIR_FileSize);
+				CoTaskSwitchHook(54);
 			}
 #if _USE_FASTSEEK
 			fp->cltbl = 0;			/* Disable fast seek mode */
@@ -3403,6 +3408,7 @@ FRESULT f_open (
 #if !_FS_READONLY
 #if !_FS_TINY
 			mem_set(fp->buf, 0, _MAX_SS);	/* Clear sector buffer */
+			CoTaskSwitchHook(55);
 #endif
 			if ((mode & FA_SEEKEND) && fp->obj.objsize > 0) {	/* Seek to end of file if FA_OPEN_APPEND is specified */
 				fp->fptr = fp->obj.objsize;			/* Offset to seek */
@@ -3427,7 +3433,7 @@ FRESULT f_open (
 			}
 #endif
 		}
-
+		CoTaskSwitchHook(56);
 		FREE_NAMBUF();
 	}
 
