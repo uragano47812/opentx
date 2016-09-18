@@ -551,13 +551,19 @@ int WavContext::mixBuffer(AudioBuffer *buffer, int volume, unsigned int fade)
 
   if (fragment.file[1]) {
     DEBUG_TIMER_START(debugTimerAudioMixOpen);
+    DEBUG_TIMER_START(debugTimerAudioMixOpen1);
     result = f_open(&state.file, fragment.file, FA_OPEN_EXISTING | FA_READ);
+    DEBUG_TIMER_STOP(debugTimerAudioMixOpen1);
     fragment.file[1] = 0;
     if (result == FR_OK) {
+      DEBUG_TIMER_START(debugTimerAudioMixOpenRead1);
       result = f_read(&state.file, wavBuffer, RIFF_CHUNK_SIZE+8, &read);
+      DEBUG_TIMER_STOP(debugTimerAudioMixOpenRead1);
       if (result == FR_OK && read == RIFF_CHUNK_SIZE+8 && !memcmp(wavBuffer, "RIFF", 4) && !memcmp(wavBuffer+8, "WAVEfmt ", 8)) {
         uint32_t size = *((uint32_t *)(wavBuffer+16));
+        DEBUG_TIMER_START(debugTimerAudioMixOpenRead2);
         result = (size < 256 ? f_read(&state.file, wavBuffer, size+8, &read) : FR_DENIED);
+        DEBUG_TIMER_STOP(debugTimerAudioMixOpenRead2);
         if (result == FR_OK && read == size+8) {
           state.codec = ((uint16_t *)wavBuffer)[0];
           state.freq = ((uint16_t *)wavBuffer)[2];
@@ -570,6 +576,7 @@ int WavContext::mixBuffer(AudioBuffer *buffer, int volume, unsigned int fade)
           else {
             result = FR_DENIED;
           }
+          DEBUG_TIMER_START(debugTimerAudioSeek);
           while (result == FR_OK && memcmp(wavSamplesPtr, "data", 4) != 0) {
             result = f_lseek(&state.file, f_tell(&state.file)+size);
             if (result == FR_OK) {
@@ -579,6 +586,7 @@ int WavContext::mixBuffer(AudioBuffer *buffer, int volume, unsigned int fade)
               size = wavSamplesPtr[1];
             }
           }
+          DEBUG_TIMER_STOP(debugTimerAudioSeek);
           state.size = size;
         }
         else {

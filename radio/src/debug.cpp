@@ -236,6 +236,10 @@ const char * debugTimerNames[DEBUG_TIMERS_COUNT] = {
   ,"  mix open "   // debugTimerAudioMixOpen,
   ,"  mix read "   // debugTimerAudioMixRead,
   ,"  mix resmp"   // debugTimerAudioMixResample,
+  ,"  mix seek "   // debugTimerAudioSeek,
+  ,"   open1   "   // debugTimerAudioMixOpen1,
+  ,"   read1   "   // debugTimerAudioMixOpenRead1,
+  ,"   read2   "   // debugTimerAudioMixOpenRead2,
 
 };
 
