@@ -226,8 +226,16 @@ const char * debugTimerNames[DEBUG_TIMERS_COUNT] = {
   ,"mix-int.   "   // debugTimerMixerIterval
   ,"Audio int. "   // debugTimerAudioIterval
   ,"Audio dur. "   // debugTimerAudioDuration
-  ," A. consume"   // debugTimerAudioConsume,
-  ," A push    "   // debugTimerAudioPush,
+  ," consume   "   // debugTimerAudioConsume,
+  ," push      "   // debugTimerAudioPush,
+  ," priority  "   // debugTimerAudioPriorityMix,
+  ," tone      "   // debugTimerAudioToneMix,
+  ," normal    "   // debugTimerAudioNormalMix,
+  ," vario     "   // debugTimerAudioVarioMix,
+  ," background"   // debugTimerAudioBackgroundMix,
+  ,"  mix open "   // debugTimerAudioMixOpen,
+  ,"  mix read "   // debugTimerAudioMixRead,
+  ,"  mix resmp"   // debugTimerAudioMixResample,
 
 };
 

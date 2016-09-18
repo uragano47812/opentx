@@ -550,6 +550,7 @@ int WavContext::mixBuffer(AudioBuffer *buffer, int volume, unsigned int fade)
   UINT read = 0;
 
   if (fragment.file[1]) {
+    DEBUG_TIMER_START(debugTimerAudioMixOpen);
     result = f_open(&state.file, fragment.file, FA_OPEN_EXISTING | FA_READ);
     fragment.file[1] = 0;
     if (result == FR_OK) {
@@ -588,11 +589,14 @@ int WavContext::mixBuffer(AudioBuffer *buffer, int volume, unsigned int fade)
         result = FR_DENIED;
       }
     }
+    DEBUG_TIMER_STOP(debugTimerAudioMixOpen);
   }
 
   read = 0;
   if (result == FR_OK) {
+    DEBUG_TIMER_START(debugTimerAudioMixRead);
     result = f_read(&state.file, wavBuffer, state.readSize, &read);
+    DEBUG_TIMER_STOP(debugTimerAudioMixRead);
     if (result == FR_OK) {
       if (read > state.size) {
         read = state.size;
@@ -604,6 +608,7 @@ int WavContext::mixBuffer(AudioBuffer *buffer, int volume, unsigned int fade)
         fragment.clear();
       }
 
+      DEBUG_TIMER_START(debugTimerAudioMixResample);
       audio_data_t * samples = buffer->data;
       if (state.codec == CODEC_ID_PCM_S16LE) {
         read /= 2;
@@ -627,6 +632,7 @@ int WavContext::mixBuffer(AudioBuffer *buffer, int volume, unsigned int fade)
           }
         }
       }
+      DEBUG_TIMER_STOP(debugTimerAudioMixResample);
 
       return samples - buffer->data;
     }
@@ -754,7 +760,9 @@ void AudioQueue::wakeup()
     }
 
     // mix the priority context (only tones)
+    DEBUG_TIMER_START(debugTimerAudioPriorityMix);
     result = priorityContext.mixBuffer(buffer, g_eeGeneral.beepVolume, fade);
+    DEBUG_TIMER_STOP(debugTimerAudioPriorityMix);
     if (result > 0) {
       size = result;
       fade += 1;
@@ -762,10 +770,14 @@ void AudioQueue::wakeup()
 
     // mix the normal context (tones and wavs)
     if (normalContext.fragment.type == FRAGMENT_TONE) {
+      DEBUG_TIMER_START(debugTimerAudioToneMix);
       result = normalContext.tone.mixBuffer(buffer, g_eeGeneral.beepVolume, fade);
+      DEBUG_TIMER_STOP(debugTimerAudioToneMix);
     }
     else if (normalContext.fragment.type == FRAGMENT_FILE) {
+      DEBUG_TIMER_START(debugTimerAudioNormalMix);
       result = normalContext.wav.mixBuffer(buffer, g_eeGeneral.wavVolume, fade);
+      DEBUG_TIMER_STOP(debugTimerAudioNormalMix);
       if (result < 0) {
         normalContext.wav.clear();
       }
@@ -789,15 +801,19 @@ void AudioQueue::wakeup()
     }
 
     // mix the vario context
+    DEBUG_TIMER_START(debugTimerAudioVarioMix);
     result = varioContext.mixBuffer(buffer, g_eeGeneral.varioVolume, fade);
-    if (result > 0) {
+    DEBUG_TIMER_STOP(debugTimerAudioVarioMix);
+     if (result > 0) {
       size = max(size, result);
       fade += 1;
     }
 
     // mix the background context
     if (isFunctionActive(FUNCTION_BACKGND_MUSIC) && !isFunctionActive(FUNCTION_BACKGND_MUSIC_PAUSE)) {
+      DEBUG_TIMER_START(debugTimerAudioBackgroundMix);
       result = backgroundContext.mixBuffer(buffer, g_eeGeneral.backgroundVolume, fade);
+      DEBUG_TIMER_STOP(debugTimerAudioBackgroundMix);
       if (result > 0) {
         size = max(size, result);
       }
