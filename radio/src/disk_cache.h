@@ -50,6 +50,7 @@ struct DiskCacheStats
 {
   uint32_t noHits;
   uint32_t noMisses;
+  uint32_t noWrites;
 };
 
 class DiskCache
