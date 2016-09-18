@@ -206,6 +206,7 @@ const char * debugTimerNames[DEBUG_TIMERS_COUNT] = {
   ,"Tel. wakeup"   // debugTimerTelemetryWakeup,
   ,"perMain dur"   // debugTimerPerMain,
   ," perMain s1"   // debugTimerPerMain1,
+  ," logs      "   // debugTimerLogs,
   ," guiMain   "   // debugTimerGuiMain,
   ,"  LUA bg   "   // debugTimerLuaBg,
   ,"  LCD wait "   // debugTimerLcdRefreshWait,
