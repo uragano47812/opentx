@@ -529,22 +529,22 @@ extern OS_MutexID audioMutex;
 void printAudioVars()
 {
   for(int n = 0; n < AUDIO_BUFFER_COUNT; n++) {
-    serialPrint("Audio Buffer %d: size: %u, state: %u, ", n, (uint32_t)audioBuffers[n].size, (uint32_t)audioBuffers[n].state);
+    serialPrint("Audio Buffer %d: size: %u, ", n, (uint32_t)audioBuffers[n].size);
     dump((uint8_t *)audioBuffers[n].data, 32);
   }
   serialPrint("fragments:");
-  for(int n = 0; n < AUDIO_QUEUE_LENGTH; n++) {
-    serialPrint("%d: type %u: id: %u, repeat: %u, ", n, (uint32_t)audioQueue.fragments[n].type,
-                                                        (uint32_t)audioQueue.fragments[n].id,
-                                                        (uint32_t)audioQueue.fragments[n].repeat);
-    if ( audioQueue.fragments[n].type == FRAGMENT_FILE) {
-      serialPrint(" file: %s", audioQueue.fragments[n].file);
-    }
-  }
+  // for(int n = 0; n < AUDIO_QUEUE_LENGTH; n++) {
+  //   serialPrint("%d: type %u: id: %u, repeat: %u, ", n, (uint32_t)audioQueue.fragments[n].type,
+  //                                                       (uint32_t)audioQueue.fragments[n].id,
+  //                                                       (uint32_t)audioQueue.fragments[n].repeat);
+  //   if ( audioQueue.fragments[n].type == FRAGMENT_FILE) {
+  //     serialPrint(" file: %s", audioQueue.fragments[n].file);
+  //   }
+  // }
 
   serialPrint("audioQueue:");
-  serialPrint("  ridx: %d, widx: %d", audioQueue.ridx, audioQueue.widx);
-  serialPrint("  bufferRIdx: %d, bufferWIdx: %d", audioQueue.bufferRIdx, audioQueue.bufferWIdx);
+  // serialPrint("  ridx: %d, widx: %d", audioQueue.ridx, audioQueue.widx);
+  // serialPrint("  readIdx: %d, writeIdx: %d", audioQueue.readIdx, audioQueue.writeIdx);
 
   serialPrint("normalContext: %u", (uint32_t)audioQueue.normalContext.fragment.type);
 

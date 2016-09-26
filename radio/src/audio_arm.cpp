@@ -497,15 +497,16 @@ AudioQueue audioQueue __DMA;
 AudioBuffer audioBuffers[AUDIO_BUFFER_COUNT] __DMA;
 
 AudioQueue::AudioQueue()
+  : buffersFifo(),
+  _started(false),
+  normalContext(),
+  backgroundContext(),
+  priorityContext(),
+  varioContext(),
+  fragmentsFifo()
 {
-  memset(this, 0, sizeof(AudioQueue));
-  memset(audioBuffers, 0, sizeof(audioBuffers));
 }
 
-void AudioQueue::start()
-{
-  state = 1;
-}
 
 #define CODEC_ID_PCM_S16LE  1
 #define CODEC_ID_PCM_ALAW   6
@@ -756,12 +757,16 @@ int ToneContext::mixBuffer(AudioBuffer * buffer, int volume, unsigned int fade)
 
 void AudioQueue::wakeup()
 {
+  fillBuffers();
   DEBUG_TIMER_START(debugTimerAudioConsume);
   audioConsumeCurrentBuffer();
   DEBUG_TIMER_STOP(debugTimerAudioConsume);
+}
 
-  AudioBuffer * buffer = getEmptyBuffer();
-  if (buffer) {
+void AudioQueue::fillBuffers()
+{
+  AudioBuffer * buffer ;
+  while ((buffer = buffersFifo.getEmptyBuffer()) != 0) {
     int result;
     unsigned int fade = 0;
     int size = 0;
@@ -784,11 +789,13 @@ void AudioQueue::wakeup()
     if (normalContext.fragment.type == FRAGMENT_TONE) {
       DEBUG_TIMER_START(debugTimerAudioToneMix);
       result = normalContext.tone.mixBuffer(buffer, g_eeGeneral.beepVolume, fade);
+      // TRACE("nt: %d", result);
       DEBUG_TIMER_STOP(debugTimerAudioToneMix);
     }
     else if (normalContext.fragment.type == FRAGMENT_FILE) {
       DEBUG_TIMER_START(debugTimerAudioNormalMix);
       result = normalContext.wav.mixBuffer(buffer, g_eeGeneral.wavVolume, fade);
+      // TRACE("nW: %d", result);
       DEBUG_TIMER_STOP(debugTimerAudioNormalMix);
       if (result < 0) {
         normalContext.wav.clear();
@@ -797,18 +804,21 @@ void AudioQueue::wakeup()
     else {
       result = 0;
     }
+
+
     if (result > 0) {
       size = max(size, result);
       fade += 1;
     }
     else {
+      // normal contex is done, load new or repeat same fragment
       CoEnterMutexSection(audioMutex);
-      if (ridx != widx) {
-        normalContext.tone.setFragment(fragments[ridx]);
-        if (!fragments[ridx].repeat--) {
-          ridx = (ridx + 1) % AUDIO_QUEUE_LENGTH;
-        }
-      }
+      normalContext.clear();
+      const AudioFragment * fragment = fragmentsFifo.get();
+      // if (fragment) {
+      //   TRACE("Got fragment %d", fragment->type);
+      // }
+      normalContext.setFragment(fragment);
       CoLeaveMutexSection(audioMutex);
     }
 
@@ -833,9 +843,9 @@ void AudioQueue::wakeup()
 
     // push the buffer if needed
     if (size > 0) {
-      audioDisableIrq();
-      // TRACE("pushing buffer %d\n", bufferWIdx);
-      bufferWIdx = nextBufferIdx(bufferWIdx);
+      // audioDisableIrq();
+      // TRACE("pushing buffer %p", buffer);
+      // writeIdx = nextBufferIdx(writeIdx);
       buffer->size = size;
 #if defined(SOFTWARE_VOLUME)
       for(uint32_t i=0; i<buffer->size; ++i) {
@@ -844,9 +854,13 @@ void AudioQueue::wakeup()
       }
 #endif
       DEBUG_TIMER_START(debugTimerAudioPush);
-      audioPushBuffer(buffer);
+      buffersFifo.audioPushBuffer();
       DEBUG_TIMER_STOP(debugTimerAudioPush);
-      audioEnableIrq();
+      // audioEnableIrq();
+    }
+    else {
+      // break the endless loop
+      break;
     }
   }
 }
@@ -870,17 +884,9 @@ void AudioQueue::pause(uint16_t len)
 
 bool AudioQueue::isPlaying(uint8_t id)
 {
-  if (normalContext.fragment.id == id || (isFunctionActive(FUNCTION_BACKGND_MUSIC) && backgroundContext.fragment.id == id))
-    return true;
-
-  uint8_t i = ridx;
-  while (i != widx) {
-    AudioFragment & fragment = fragments[i];
-    if (fragment.id == id)
-      return true;
-    i = (i + 1) % AUDIO_QUEUE_LENGTH;
-  }
-  return false;
+  return normalContext.fragment.id == id ||
+         (isFunctionActive(FUNCTION_BACKGND_MUSIC) && backgroundContext.fragment.id == id) ||
+         fragmentsFifo.findFragment(id);
 }
 
 void AudioQueue::playTone(uint16_t freq, uint16_t len, uint16_t pause, uint8_t flags, int8_t freqIncr)
@@ -896,42 +902,21 @@ void AudioQueue::playTone(uint16_t freq, uint16_t len, uint16_t pause, uint8_t f
   }
 
   if (flags & PLAY_BACKGROUND) {
-    AudioFragment & fragment = varioContext.fragment;
-    fragment.type = FRAGMENT_TONE;
-    fragment.tone.freq = freq;
-    fragment.tone.duration = len;
-    fragment.tone.pause = pause;
-    fragment.tone.reset = (flags & PLAY_NOW);
+    // (uint16_t freq, uint16_t duration, uint16_t pause, uint8_t repeat, int8_t freqIncr, bool reset)
+    varioContext.setFragment(freq, len, pause, 0, 0, (flags & PLAY_NOW));
   }
   else {
     freq += g_eeGeneral.speakerPitch * 15;
     len = getToneLength(len);
 
     if (flags & PLAY_NOW) {
-      AudioFragment & fragment = priorityContext.fragment;
-      if (fragment.type == FRAGMENT_EMPTY) {
+      if (priorityContext.free()) {
         priorityContext.clear();
-        fragment.type = FRAGMENT_TONE;
-        fragment.repeat = flags & 0x0f;
-        fragment.tone.freq = freq;
-        fragment.tone.duration = len;
-        fragment.tone.pause = pause;
-        fragment.tone.freqIncr = freqIncr;
+        priorityContext.setFragment(freq, len, pause, flags & 0x0f, freqIncr, false);
       }
     }
     else {
-      uint8_t next_widx = (widx + 1) % AUDIO_QUEUE_LENGTH;
-      if (next_widx != ridx) {
-        AudioFragment & fragment = fragments[widx];
-        fragment.clear();
-        fragment.type = FRAGMENT_TONE;
-        fragment.repeat = flags & 0x0f;
-        fragment.tone.freq = freq;
-        fragment.tone.duration = len;
-        fragment.tone.pause = pause;
-        fragment.tone.freqIncr = freqIncr;
-        widx = next_widx;
-      }
+      fragmentsFifo.push(AudioFragment(freq, len, pause, flags & 0x0f, freqIncr, false));
     }
   }
 
@@ -974,16 +959,7 @@ void AudioQueue::playFile(const char *filename, uint8_t flags, uint8_t id)
     fragment.id = id;
   }
   else {
-    uint8_t next_widx = (widx + 1) % AUDIO_QUEUE_LENGTH;
-    if (next_widx != ridx) {
-      AudioFragment & fragment = fragments[widx];
-      fragment.clear();
-      fragment.type = FRAGMENT_FILE;
-      strcpy(fragment.file, filename);
-      fragment.repeat = flags & 0x0f;
-      fragment.id = id;
-      widx = next_widx;
-    }
+    fragmentsFifo.push(AudioFragment(filename, flags & 0x0f, id));
   }
 
   CoLeaveMutexSection(audioMutex);
@@ -1018,7 +994,7 @@ void AudioQueue::stopSD()
 void AudioQueue::stopAll()
 {
   CoEnterMutexSection(audioMutex);
-  widx = ridx;                      // clean the queue
+  fragmentsFifo.clear();
   priorityContext.clear();
   normalContext.fragment.clear();
   varioContext.clear();
@@ -1029,7 +1005,7 @@ void AudioQueue::stopAll()
 void AudioQueue::flush()
 {
   CoEnterMutexSection(audioMutex);
-  widx = ridx;                      // clean the queue
+  fragmentsFifo.clear();
   varioContext.clear();
   backgroundContext.clear();
   CoLeaveMutexSection(audioMutex);

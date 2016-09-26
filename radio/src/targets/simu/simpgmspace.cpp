@@ -367,15 +367,13 @@ struct SimulatorAudio {
 
 void audioPushBuffer(AudioBuffer * buffer)
 {
-  buffer->state = AUDIO_BUFFER_FILLED;
+  // buffer->state = AUDIO_BUFFER_FILLED;
 }
 #endif
 
-#if defined(PCBHORUS)
 void audioConsumeCurrentBuffer()
 {
 }
-#endif
 
 #if defined(MASTER_VOLUME)
 void setScaledVolume(uint8_t volume)
@@ -395,7 +393,7 @@ int32_t getVolume()
 #endif
 
 #if defined(SIMU_AUDIO) && defined(CPUARM)
-void copyBuffer(uint8_t * dest, uint16_t * buff, unsigned int samples)
+void copyBuffer(uint8_t * dest, const uint16_t * buff, unsigned int samples)
 {
   for(unsigned int i=0; i<samples; i++) {
     int sample = ((int32_t)(uint32_t)(buff[i]) - 0x8000);  // conversion from uint16_t
@@ -416,15 +414,16 @@ void fillAudioBuffer(void *udata, Uint8 *stream, int len)
     // putchar('l');
   }
 
-  if (audioQueue.filledAtleast(len/(AUDIO_BUFFER_SIZE*2)+1) ) {
+  if (audioQueue.buffersFifo.filledAtleast(len/(AUDIO_BUFFER_SIZE*2)+1) ) {
     while(true) {
-      AudioBuffer *nextBuffer = audioQueue.getNextFilledBuffer();
+      const AudioBuffer * nextBuffer = audioQueue.buffersFifo.getNextFilledBuffer();
       if (nextBuffer) {
         if (len >= nextBuffer->size*2) {
           copyBuffer(stream, nextBuffer->data, nextBuffer->size);
           stream += nextBuffer->size*2;
           len -= nextBuffer->size*2;
           // putchar('+');
+          audioQueue.buffersFifo.freeNextFilledBuffer();
         }
         else {
           //partial
@@ -433,6 +432,7 @@ void fillAudioBuffer(void *udata, Uint8 *stream, int len)
           memcpy(simuAudio.leftoverData, &nextBuffer->data[len/2], simuAudio.leftoverLen*2);
           len = 0;
           // putchar('p');
+          audioQueue.buffersFifo.freeNextFilledBuffer();
           break;
         }
       }
@@ -736,8 +736,8 @@ FRESULT f_chdir (const TCHAR *name)
 FRESULT f_opendir (DIR * rep, const TCHAR * name)
 {
   char *path = convertSimuPath(name);
-  rep->fs = (FATFS *)simu::opendir(path);
-  if ( rep->fs ) {
+  rep->obj.fs = (FATFS *)simu::opendir(path);
+  if ( rep->obj.fs ) {
     TRACE("f_opendir(%s) = OK", path);
     return FR_OK;
   }
@@ -748,14 +748,14 @@ FRESULT f_opendir (DIR * rep, const TCHAR * name)
 FRESULT f_closedir (DIR * rep)
 {
   TRACE("f_closedir(%p)", rep);
-  if (rep->fs) simu::closedir((simu::DIR *)rep->fs);
+  if (rep->obj.fs) simu::closedir((simu::DIR *)rep->obj.fs);
   return FR_OK;
 }
 
 FRESULT f_readdir (DIR * rep, FILINFO * fil)
 {
-  if (!rep->fs) return FR_NO_FILE;
-  simu::dirent * ent = simu::readdir((simu::DIR *)rep->fs);
+  if (!rep->obj.fs) return FR_NO_FILE;
+  simu::dirent * ent = simu::readdir((simu::DIR *)rep->obj.fs);
   if (!ent) return FR_NO_FILE;
 
 #if defined(WIN32) || !defined(__GNUC__) || defined(__APPLE__)
