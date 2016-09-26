@@ -281,6 +281,7 @@ class AudioBufferFifo {
   private:
     volatile uint8_t readIdx;
     volatile uint8_t writeIdx;
+    volatile bool bufferFull;
 
     // readIdx == writeIdx       -> buffer empty
     // readIdx == writeIdx + 1   -> buffer full
@@ -291,19 +292,19 @@ class AudioBufferFifo {
     }
     bool full() const
     {
-      return readIdx == nextBufferIdx(writeIdx);
+      return bufferFull;
     }
     bool empty() const
     {
-      return readIdx == writeIdx;
+      return (readIdx == writeIdx) && !bufferFull;
     }
     uint8_t used() const
     {
-      return writeIdx - readIdx;
+      return bufferFull ? AUDIO_BUFFER_COUNT : writeIdx - readIdx;
     }
 
   public:
-    AudioBufferFifo() : readIdx(0), writeIdx(0)
+    AudioBufferFifo() : readIdx(0), writeIdx(0), bufferFull(false)
     {
       memset(audioBuffers, 0, sizeof(audioBuffers));
     }
@@ -318,7 +319,10 @@ class AudioBufferFifo {
     void audioPushBuffer()
     {
       // AudioBuffer * buffer = &audioBuffers[writeIdx];
+      audioDisableIrq();
       writeIdx = nextBufferIdx(writeIdx);
+      bufferFull = (writeIdx == readIdx);
+      audioEnableIrq();
       // buffer->state = AUDIO_BUFFER_FILLED;
     }
 
@@ -331,7 +335,10 @@ class AudioBufferFifo {
     // frees the last played buffer
     void freeNextFilledBuffer()
     {
+      audioDisableIrq();
       readIdx = nextBufferIdx(readIdx);
+      bufferFull = false;
+      audioEnableIrq();
     }
 
     bool filledAtleast(int noBuffers) const
