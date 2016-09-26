@@ -107,12 +107,12 @@ int cliLs(const char ** argv)
 {
   FILINFO fno;
   DIR dir;
-  char *fn;   /* This function is assuming non-Unicode cfg. */
-#if _USE_LFN
-  TCHAR lfn[_MAX_LFN + 1];
-  fno.lfname = lfn;
-  fno.lfsize = sizeof(lfn);
-#endif
+  // char *fn;   /* This function is assuming non-Unicode cfg. */
+// #if _USE_LFN
+//   TCHAR lfn[_MAX_LFN + 1];
+//   fno.lfname = lfn;
+//   fno.lfsize = sizeof(lfn);
+// #endif
 
   FRESULT res = f_opendir(&dir, argv[1]);        /* Open the directory */
   if (res == FR_OK) {
@@ -120,12 +120,12 @@ int cliLs(const char ** argv)
       res = f_readdir(&dir, &fno);                   /* Read a directory item */
       if (res != FR_OK || fno.fname[0] == 0) break;  /* Break on error or end of dir */
 
-#if _USE_LFN
-      fn = *fno.lfname ? fno.lfname : fno.fname;
-#else
-      fn = fno.fname;
-#endif
-      serialPrint(fn);
+// #if _USE_LFN
+//       fn = *fno.lfname ? fno.lfname : fno.fname;
+// #else
+//       fn = fno.fname;
+// #endif
+      serialPrint(fno.fname);
     }
   }
   else {

@@ -99,7 +99,7 @@ const pm_char * logsOpen()
 
   strcpy_P(tmp, STR_LOGS_EXT);
 
-  result = f_open(&g_oLogFile, filename, FA_OPEN_ALWAYS | FA_WRITE);
+  result = f_open(&g_oLogFile, filename, FA_OPEN_ALWAYS | FA_WRITE);  //TODO FA_OPEN_APPEND
   if (result != FR_OK) {
     return SDCARD_ERROR(result);
   }
@@ -123,7 +123,7 @@ void logsClose()
 {
   if (f_close(&g_oLogFile) != FR_OK) {
     // close failed, forget file
-    g_oLogFile.fs = 0;
+    g_oLogFile.obj.fs = 0;
   }
   lastLogTime = 0;
 }
@@ -221,7 +221,7 @@ void logsWrite()
     if (lastLogTime == 0 || (tmr10ms_t)(tmr10ms - lastLogTime) >= (tmr10ms_t)logDelay*10) {
       lastLogTime = tmr10ms;
 
-      if (!g_oLogFile.fs) {
+      if (!g_oLogFile.obj.fs) {
         const pm_char * result = logsOpen();
         if (result != NULL) {
           if (result != error_displayed) {
@@ -384,7 +384,7 @@ void logsWrite()
   }
   else {
     error_displayed = NULL;
-    if (g_oLogFile.fs) {
+    if (g_oLogFile.obj.fs) {
       logsClose();
     }
   }

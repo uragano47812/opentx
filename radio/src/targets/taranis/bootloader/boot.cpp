@@ -153,23 +153,23 @@ FRESULT readBinDir(DIR *dj, FILINFO *fno)
     if (fr != FR_OK || fno->fname[0] == 0) {
       break;
     }
-    if (*fno->lfname == 0) {
-      strAppend(fno->lfname, fno->fname); // Copy 8.3 name
-    }
-    int32_t len = strlen(fno->lfname) - 4;
+    // if (*fno->lfname == 0) {
+    //   strAppend(fno->lfname, fno->fname); // Copy 8.3 name
+    // }
+    int32_t len = strlen(fno->fname) - 4;
     if (len < 0) {
       loop = 1;
     }
-    if (fno->lfname[len] != '.') {
+    if (fno->fname[len] != '.') {
       loop = 1;
     }
-    if ((fno->lfname[len + 1] != 'b') && (fno->lfname[len + 1] != 'B')) {
+    if ((fno->fname[len + 1] != 'b') && (fno->fname[len + 1] != 'B')) {
       loop = 1;
     }
-    if ((fno->lfname[len + 2] != 'i') && (fno->lfname[len + 2] != 'I')) {
+    if ((fno->fname[len + 2] != 'i') && (fno->fname[len + 2] != 'I')) {
       loop = 1;
     }
-    if ((fno->lfname[len + 3] != 'n') && (fno->lfname[len + 3] != 'N')) {
+    if ((fno->fname[len + 3] != 'n') && (fno->fname[len + 3] != 'N')) {
       loop = 1;
     }
 
@@ -181,8 +181,7 @@ uint32_t fillNames(uint32_t index)
 {
   uint32_t i;
   FRESULT fr;
-  Finfo.lfname = Filenames[0];
-  Finfo.lfsize = 48;
+  strAppend(Finfo.fname, Filenames[0]);
   fr = f_readdir(&Dj, 0);         // rewind
   fr = f_readdir(&Dj, &Finfo);    // Skip .
   fr = f_readdir(&Dj, &Finfo);    // Skip ..
@@ -196,7 +195,7 @@ uint32_t fillNames(uint32_t index)
     }
   }
   for (i = 1; i < 7; i += 1) {
-    Finfo.lfname = Filenames[i];
+    strAppend(Finfo.fname, Filenames[i]);
     fr = readBinDir(&Dj, &Finfo);   // First entry
     FileSize[i] = Finfo.fsize;
     if (fr != FR_OK || Finfo.fname[0] == 0) {
