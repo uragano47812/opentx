@@ -3241,7 +3241,11 @@ FRESULT f_mount (
 /*-----------------------------------------------------------------------*/
 /* Open or Create a File                                                 */
 /*-----------------------------------------------------------------------*/
-extern void CoTaskSwitchHook(BYTE taskID);
+#if !defined(BOOT)
+	extern void CoTaskSwitchHook(BYTE taskID);
+#else
+	#define CoTaskSwitchHook(foo)
+#endif
 
 FRESULT f_open (
 	FIL* fp,			/* Pointer to the blank file object */
