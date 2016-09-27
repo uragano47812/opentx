@@ -546,7 +546,7 @@ void printAudioVars()
   // serialPrint("  ridx: %d, widx: %d", audioQueue.ridx, audioQueue.widx);
   // serialPrint("  readIdx: %d, writeIdx: %d", audioQueue.readIdx, audioQueue.writeIdx);
 
-  serialPrint("normalContext: %u", (uint32_t)audioQueue.normalContext.fragment.type);
+  // serialPrint("normalContext: %u", (uint32_t)audioQueue.normalContext.fragment.type);
 
   serialPrint("audioMutex[%u] = %u", (uint32_t)audioMutex, (uint32_t)MutexTbl[audioMutex].mutexFlag);
 }

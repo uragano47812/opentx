@@ -3241,7 +3241,7 @@ FRESULT f_mount (
 /*-----------------------------------------------------------------------*/
 /* Open or Create a File                                                 */
 /*-----------------------------------------------------------------------*/
-#if !defined(BOOT)
+#if !defined(BOOT) && defined(CPUARM)
 	extern void CoTaskSwitchHook(BYTE taskID);
 #else
 	#define CoTaskSwitchHook(foo)
