@@ -229,10 +229,10 @@ char * getAudioPath(char * path)
   return path + sizeof(SOUNDS_PATH);
 }
 
-char * strAppendSystemAudioPath(char * path, bool addTrailingSlash=true)
+char * strAppendSystemAudioPath(char * path)
 {
   char * str = getAudioPath(path);
-  strcpy(str, addTrailingSlash ? SYSTEM_SUBDIR "/" : SYSTEM_SUBDIR);
+  strcpy(str,SYSTEM_SUBDIR "/");
   return str + sizeof(SYSTEM_SUBDIR);
 }
 
