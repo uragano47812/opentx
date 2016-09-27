@@ -229,10 +229,10 @@ char * getAudioPath(char * path)
   return path + sizeof(SOUNDS_PATH);
 }
 
-char * strAppendSystemAudioPath(char * path)
+char * strAppendSystemAudioPath(char * path, bool addTrailingSlash=true)
 {
   char * str = getAudioPath(path);
-  strcpy(str, SYSTEM_SUBDIR "/");
+  strcpy(str, addTrailingSlash ? SYSTEM_SUBDIR "/" : SYSTEM_SUBDIR);
   return str + sizeof(SYSTEM_SUBDIR);
 }
 
@@ -245,17 +245,12 @@ void getSystemAudioFile(char * filename, int index)
 
 void referenceSystemAudioFiles()
 {
+  static_assert(sizeof(audioFilenames)==AU_SPECIAL_SOUND_FIRST*sizeof(char *), "Invalid audioFilenames size");
   char path[AUDIO_FILENAME_MAXLEN+1];
   FILINFO fno;
   DIR dir;
-  // char *fn;   /* This function is assuming non-Unicode cfg. */
-  // TCHAR lfn[_MAX_LFN + 1];
-  // fno.lfname = lfn;
-  // fno.lfsize = sizeof(lfn);
 
   sdAvailableSystemAudioFiles.reset();
-
-  assert(sizeof(audioFilenames)==AU_SPECIAL_SOUND_FIRST*sizeof(char *));
 
   char * filename = strAppendSystemAudioPath(path);
   *(filename-1) = '\0';
@@ -265,7 +260,6 @@ void referenceSystemAudioFiles()
     for (;;) {
       res = f_readdir(&dir, &fno);                   /* Read a directory item */
       if (res != FR_OK || fno.fname[0] == 0) break;  /* Break on error or end of dir */
-      // fn = *fno.lfname ? fno.lfname : fno.fname;
       uint8_t len = strlen(fno.fname);
 
       // Eliminates directories / non wav files
@@ -360,10 +354,6 @@ void referenceModelAudioFiles()
   char path[AUDIO_FILENAME_MAXLEN+1];
   FILINFO fno;
   DIR dir;
-  // char *fn;   /* This function is assuming non-Unicode cfg. */
-  // TCHAR lfn[_MAX_LFN + 1];
-  // fno.lfname = lfn;
-  // fno.lfsize = sizeof(lfn);
 
   sdAvailablePhaseAudioFiles.reset();
   sdAvailableSwitchAudioFiles.reset();
@@ -377,7 +367,6 @@ void referenceModelAudioFiles()
     for (;;) {
       res = f_readdir(&dir, &fno);                   /* Read a directory item */
       if (res != FR_OK || fno.fname[0] == 0) break;  /* Break on error or end of dir */
-      // fn = *fno.lfname ? fno.lfname : fno.fname;
       uint8_t len = strlen(fno.fname);
       bool found = false;
 
@@ -475,7 +464,6 @@ void playModelEvent(uint8_t category, uint8_t index, event_t event)
   }
 }
 
-
 void playModelName()
 {
   char filename[AUDIO_FILENAME_MAXLEN+1];
@@ -493,7 +481,7 @@ void playModelName()
 const int16_t alawTable[256] = { -5504, -5248, -6016, -5760, -4480, -4224, -4992, -4736, -7552, -7296, -8064, -7808, -6528, -6272, -7040, -6784, -2752, -2624, -3008, -2880, -2240, -2112, -2496, -2368, -3776, -3648, -4032, -3904, -3264, -3136, -3520, -3392, -22016, -20992, -24064, -23040, -17920, -16896, -19968, -18944, -30208, -29184, -32256, -31232, -26112, -25088, -28160, -27136, -11008, -10496, -12032, -11520, -8960, -8448, -9984, -9472, -15104, -14592, -16128, -15616, -13056, -12544, -14080, -13568, -344, -328, -376, -360, -280, -264, -312, -296, -472, -456, -504, -488, -408, -392, -440, -424, -88, -72, -120, -104, -24, -8, -56, -40, -216, -200, -248, -232, -152, -136, -184, -168, -1376, -1312, -1504, -1440, -1120, -1056, -1248, -1184, -1888, -1824, -2016, -1952, -1632, -1568, -1760, -1696, -688, -656, -752, -720, -560, -528, -624, -592, -944, -912, -1008, -976, -816, -784, -880, -848, 5504, 5248, 6016, 5760, 4480, 4224, 4992, 4736, 7552, 7296, 8064, 7808, 6528, 6272, 7040, 6784, 2752, 2624, 3008, 2880, 2240, 2112, 2496, 2368, 3776, 3648, 4032, 3904, 3264, 3136, 3520, 3392, 22016, 20992, 24064, 23040, 17920, 16896, 19968, 18944, 30208, 29184, 32256, 31232, 26112, 25088, 28160, 27136, 11008, 10496, 12032, 11520, 8960, 8448, 9984, 9472, 15104, 14592, 16128, 15616, 13056, 12544, 14080, 13568, 344, 328, 376, 360, 280, 264, 312, 296, 472, 456, 504, 488, 408, 392, 440, 424, 88, 72, 120, 104, 24, 8, 56, 40, 216, 200, 248, 232, 152, 136, 184, 168, 1376, 1312, 1504, 1440, 1120, 1056, 1248, 1184, 1888, 1824, 2016, 1952, 1632, 1568, 1760, 1696, 688, 656, 752, 720, 560, 528, 624, 592, 944, 912, 1008, 976, 816, 784, 880, 848 };
 const int16_t ulawTable[256] = { -32124, -31100, -30076, -29052, -28028, -27004, -25980, -24956, -23932, -22908, -21884, -20860, -19836, -18812, -17788, -16764, -15996, -15484, -14972, -14460, -13948, -13436, -12924, -12412, -11900, -11388, -10876, -10364, -9852, -9340, -8828, -8316, -7932, -7676, -7420, -7164, -6908, -6652, -6396, -6140, -5884, -5628, -5372, -5116, -4860, -4604, -4348, -4092, -3900, -3772, -3644, -3516, -3388, -3260, -3132, -3004, -2876, -2748, -2620, -2492, -2364, -2236, -2108, -1980, -1884, -1820, -1756, -1692, -1628, -1564, -1500, -1436, -1372, -1308, -1244, -1180, -1116, -1052, -988, -924, -876, -844, -812, -780, -748, -716, -684, -652, -620, -588, -556, -524, -492, -460, -428, -396, -372, -356, -340, -324, -308, -292, -276, -260, -244, -228, -212, -196, -180, -164, -148, -132, -120, -112, -104, -96, -88, -80, -72, -64, -56, -48, -40, -32, -24, -16, -8, 0, 32124, 31100, 30076, 29052, 28028, 27004, 25980, 24956, 23932, 22908, 21884, 20860, 19836, 18812, 17788, 16764, 15996, 15484, 14972, 14460, 13948, 13436, 12924, 12412, 11900, 11388, 10876, 10364, 9852, 9340, 8828, 8316, 7932, 7676, 7420, 7164, 6908, 6652, 6396, 6140, 5884, 5628, 5372, 5116, 4860, 4604, 4348, 4092, 3900, 3772, 3644, 3516, 3388, 3260, 3132, 3004, 2876, 2748, 2620, 2492, 2364, 2236, 2108, 1980, 1884, 1820, 1756, 1692, 1628, 1564, 1500, 1436, 1372, 1308, 1244, 1180, 1116, 1052, 988, 924, 876, 844, 812, 780, 748, 716, 684, 652, 620, 588, 556, 524, 492, 460, 428, 396, 372, 356, 340, 324, 308, 292, 276, 260, 244, 228, 212, 196, 180, 164, 148, 132, 120, 112, 104, 96, 88, 80, 72, 64, 56, 48, 40, 32, 24, 16, 8, 0 };
 
-AudioQueue audioQueue __DMA;
+AudioQueue audioQueue __DMA;      // to place it in the RAM section on Horus, to have file buffers in RAM for DMA access
 AudioBuffer audioBuffers[AUDIO_BUFFER_COUNT] __DMA;
 
 AudioQueue::AudioQueue()
@@ -535,7 +523,7 @@ void audioTask(void * pdata)
 }
 #endif
 
-void mixSample(audio_data_t * result, int sample, unsigned int fade)
+inline void mixSample(audio_data_t * result, int sample, unsigned int fade)
 {
   *result = limit(AUDIO_DATA_MIN, *result + ((sample >> fade) >> (16-AUDIO_BITS_PER_SAMPLE)), AUDIO_DATA_MAX);
 }
@@ -650,7 +638,6 @@ int WavContext::mixBuffer(AudioBuffer *buffer, int volume, unsigned int fade)
       return samples - buffer->data;
     }
   }
-
   return -result;
 }
 #else
@@ -757,15 +744,11 @@ int ToneContext::mixBuffer(AudioBuffer * buffer, int volume, unsigned int fade)
 
 void AudioQueue::wakeup()
 {
-  fillBuffers();
   DEBUG_TIMER_START(debugTimerAudioConsume);
   audioConsumeCurrentBuffer();
   DEBUG_TIMER_STOP(debugTimerAudioConsume);
-}
 
-void AudioQueue::fillBuffers()
-{
-  AudioBuffer * buffer ;
+  AudioBuffer * buffer;
   while ((buffer = buffersFifo.getEmptyBuffer()) != 0) {
     int result;
     unsigned int fade = 0;
@@ -786,19 +769,19 @@ void AudioQueue::fillBuffers()
     }
 
     // mix the normal context (tones and wavs)
-    if (normalContext.fragment.type == FRAGMENT_TONE) {
+    if (normalContext.isTone()) {
       DEBUG_TIMER_START(debugTimerAudioToneMix);
-      result = normalContext.tone.mixBuffer(buffer, g_eeGeneral.beepVolume, fade);
-      // TRACE("nt: %d", result);
+      result = normalContext.mixBuffer(buffer, g_eeGeneral.beepVolume, fade);
+      TRACE("nt: %d", result);
       DEBUG_TIMER_STOP(debugTimerAudioToneMix);
     }
-    else if (normalContext.fragment.type == FRAGMENT_FILE) {
+    else if (normalContext.isFile()) {
       DEBUG_TIMER_START(debugTimerAudioNormalMix);
-      result = normalContext.wav.mixBuffer(buffer, g_eeGeneral.wavVolume, fade);
-      // TRACE("nW: %d", result);
+      result = normalContext.mixBuffer(buffer, g_eeGeneral.wavVolume, fade);
+      TRACE("nW: %d", result);
       DEBUG_TIMER_STOP(debugTimerAudioNormalMix);
       if (result < 0) {
-        normalContext.wav.clear();
+        normalContext.clear();
       }
     }
     else {
@@ -815,9 +798,9 @@ void AudioQueue::fillBuffers()
       CoEnterMutexSection(audioMutex);
       normalContext.clear();
       const AudioFragment * fragment = fragmentsFifo.get();
-      // if (fragment) {
-      //   TRACE("Got fragment %d", fragment->type);
-      // }
+      if (fragment) {
+        TRACE("Got fragment %d", fragment->type);
+      }
       normalContext.setFragment(fragment);
       CoLeaveMutexSection(audioMutex);
     }
@@ -844,7 +827,7 @@ void AudioQueue::fillBuffers()
     // push the buffer if needed
     if (size > 0) {
       // audioDisableIrq();
-      // TRACE("pushing buffer %p", buffer);
+      TRACE("pushing buffer %p", buffer);
       // writeIdx = nextBufferIdx(writeIdx);
       buffer->size = size;
 #if defined(SOFTWARE_VOLUME)
@@ -862,6 +845,9 @@ void AudioQueue::fillBuffers()
       // break the endless loop
       break;
     }
+    DEBUG_TIMER_START(debugTimerAudioConsume);
+    audioConsumeCurrentBuffer();
+    DEBUG_TIMER_STOP(debugTimerAudioConsume);
   }
 }
 
@@ -884,9 +870,9 @@ void AudioQueue::pause(uint16_t len)
 
 bool AudioQueue::isPlaying(uint8_t id)
 {
-  return normalContext.fragment.id == id ||
-         (isFunctionActive(FUNCTION_BACKGND_MUSIC) && backgroundContext.fragment.id == id) ||
-         fragmentsFifo.findFragment(id);
+  return normalContext.hasId(id) ||
+         (isFunctionActive(FUNCTION_BACKGND_MUSIC) && backgroundContext.hasId(id)) ||
+         fragmentsFifo.hasId(id);
 }
 
 void AudioQueue::playTone(uint16_t freq, uint16_t len, uint16_t pause, uint8_t flags, int8_t freqIncr)
@@ -902,15 +888,15 @@ void AudioQueue::playTone(uint16_t freq, uint16_t len, uint16_t pause, uint8_t f
   }
 
   if (flags & PLAY_BACKGROUND) {
-    // (uint16_t freq, uint16_t duration, uint16_t pause, uint8_t repeat, int8_t freqIncr, bool reset)
     varioContext.setFragment(freq, len, pause, 0, 0, (flags & PLAY_NOW));
   }
   else {
+    // adjust frequency and length according to the user preferences
     freq += g_eeGeneral.speakerPitch * 15;
     len = getToneLength(len);
 
     if (flags & PLAY_NOW) {
-      if (priorityContext.free()) {
+      if (priorityContext.isFree()) {
         priorityContext.clear();
         priorityContext.setFragment(freq, len, pause, flags & 0x0f, freqIncr, false);
       }
@@ -953,10 +939,7 @@ void AudioQueue::playFile(const char *filename, uint8_t flags, uint8_t id)
 
   if (flags & PLAY_BACKGROUND) {
     backgroundContext.clear();
-    AudioFragment & fragment = backgroundContext.fragment;
-    fragment.type = FRAGMENT_FILE;
-    strcpy(fragment.file, filename);
-    fragment.id = id;
+    backgroundContext.setFragment(filename, 0, id);
   }
   else {
     fragmentsFifo.push(AudioFragment(filename, flags & 0x0f, id));
@@ -976,10 +959,7 @@ void AudioQueue::stopPlay(uint8_t id)
 #endif
 
   // For the moment it's only needed to stop the background music
-  if (backgroundContext.fragment.id == id) {
-    backgroundContext.fragment.type = FRAGMENT_EMPTY;
-    backgroundContext.fragment.id = 0;
-  }
+  backgroundContext.stop(id);
 }
 
 void AudioQueue::stopSD()
@@ -993,12 +973,10 @@ void AudioQueue::stopSD()
 
 void AudioQueue::stopAll()
 {
+  flush();
   CoEnterMutexSection(audioMutex);
-  fragmentsFifo.clear();
   priorityContext.clear();
-  normalContext.fragment.clear();
-  varioContext.clear();
-  backgroundContext.clear();
+  normalContext.clear();
   CoLeaveMutexSection(audioMutex);
 }
 
@@ -1026,7 +1004,6 @@ void audioKeyPress()
   if (g_eeGeneral.beepMode == e_mode_all) {
     audioQueue.playTone(BEEP_DEFAULT_FREQ, 40, 20, PLAY_NOW);
   }
-
 #if defined(HAPTIC)
   if (g_eeGeneral.hapticMode == e_mode_all) {
     haptic.play(5, 0, PLAY_NOW);
@@ -1049,10 +1026,8 @@ void audioKeyError()
 
 void audioTrimPress(int value)
 {
-  value = limit(TRIM_MIN, value, TRIM_MAX);
-  value <<= 3;
-  value += 120*16;
   if (g_eeGeneral.beepMode >= e_mode_nokeys) {
+    value = limit(TRIM_MIN, value, TRIM_MAX) * 8 + 120*16;
     audioQueue.playTone(value, 40, 20, PLAY_NOW);
   }
 }

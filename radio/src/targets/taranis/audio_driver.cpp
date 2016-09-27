@@ -98,24 +98,6 @@ void audioConsumeCurrentBuffer(void)
 
 }
 
-// void audioPushBuffer(AudioBuffer * buffer)
-// {
-//   if (dacIdle) {
-//     dacIdle = false;
-//     buffer->state = AUDIO_BUFFER_PLAYING;
-//     AUDIO_DMA_Stream->CR &= ~DMA_SxCR_EN ;                              // Disable DMA channel
-//     AUDIO_DMA->HIFCR = DMA_HIFCR_CTCIF5 | DMA_HIFCR_CHTIF5 | DMA_HIFCR_CTEIF5 | DMA_HIFCR_CDMEIF5 | DMA_HIFCR_CFEIF5 ; // Write ones to clear bits
-//     AUDIO_DMA_Stream->M0AR = CONVERT_PTR_UINT(buffer->data);
-//     AUDIO_DMA_Stream->NDTR = buffer->size;
-//     AUDIO_DMA_Stream->CR |= DMA_SxCR_EN | DMA_SxCR_TCIE ;               // Enable DMA channel and interrupt
-//     DAC->SR = DAC_SR_DMAUDR1 ;                      // Write 1 to clear flag
-//     DAC->CR |= DAC_CR_EN1 | DAC_CR_DMAEN1 ;                 // Enable DAC
-//   }
-//   else {
-//     buffer->state = AUDIO_BUFFER_FILLED;
-//   }
-// }
-
 void dacStart()
 {
   AUDIO_DMA->HIFCR = DMA_HIFCR_CTCIF5 | DMA_HIFCR_CHTIF5 | DMA_HIFCR_CTEIF5 | DMA_HIFCR_CDMEIF5 | DMA_HIFCR_CFEIF5 ; // Write ones to clear bits
