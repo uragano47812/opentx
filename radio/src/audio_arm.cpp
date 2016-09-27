@@ -21,6 +21,12 @@
 #include "opentx.h"
 #include <math.h>
 
+#if !defined(BOOT) && defined(CPUARM) && defined(DEBUG_TASKS)
+  extern void CoTaskSwitchHook(BYTE taskID);
+#else
+  #define CoTaskSwitchHook(foo)
+#endif
+
 extern OS_MutexID audioMutex;
 
 #if defined(SOFTWARE_VOLUME)
@@ -772,13 +778,13 @@ void AudioQueue::wakeup()
     if (normalContext.isTone()) {
       DEBUG_TIMER_START(debugTimerAudioToneMix);
       result = normalContext.mixBuffer(buffer, g_eeGeneral.beepVolume, fade);
-      TRACE("nt: %d", result);
+      // TRACE("nt: %d", result);
       DEBUG_TIMER_STOP(debugTimerAudioToneMix);
     }
     else if (normalContext.isFile()) {
       DEBUG_TIMER_START(debugTimerAudioNormalMix);
       result = normalContext.mixBuffer(buffer, g_eeGeneral.wavVolume, fade);
-      TRACE("nW: %d", result);
+      // TRACE("nW: %d", result);
       DEBUG_TIMER_STOP(debugTimerAudioNormalMix);
       if (result < 0) {
         normalContext.clear();
@@ -798,9 +804,9 @@ void AudioQueue::wakeup()
       CoEnterMutexSection(audioMutex);
       normalContext.clear();
       const AudioFragment * fragment = fragmentsFifo.get();
-      if (fragment) {
-        TRACE("Got fragment %d", fragment->type);
-      }
+      // if (fragment) {
+      //   TRACE("Got fragment %d", fragment->type);
+      // }
       normalContext.setFragment(fragment);
       CoLeaveMutexSection(audioMutex);
     }
@@ -827,7 +833,7 @@ void AudioQueue::wakeup()
     // push the buffer if needed
     if (size > 0) {
       // audioDisableIrq();
-      TRACE("pushing buffer %p", buffer);
+      // TRACE("pushing buffer %p", buffer);
       // writeIdx = nextBufferIdx(writeIdx);
       buffer->size = size;
 #if defined(SOFTWARE_VOLUME)

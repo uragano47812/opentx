@@ -21,7 +21,7 @@
 #include "opentx.h"
 
 #if !defined(SIMU)
-bool dacIdle = true;
+// bool dacIdle = true;
 const AudioBuffer * nextBuffer = 0;
 
 void setSampleRate(uint32_t frequency)
@@ -80,12 +80,11 @@ void dacInit()
 
 void audioConsumeCurrentBuffer(void)
 {
-  if (dacIdle) {
-    if (nextBuffer) audioQueue.buffersFifo.freeNextFilledBuffer();
+  if (nextBuffer == 0) {
 
     nextBuffer = audioQueue.buffersFifo.getNextFilledBuffer();
     if (nextBuffer) {
-      dacIdle = false;
+      // dacIdle = false;
       AUDIO_DMA_Stream->CR &= ~DMA_SxCR_EN ;                              // Disable DMA channel
       AUDIO_DMA->HIFCR = DMA_HIFCR_CTCIF5 | DMA_HIFCR_CHTIF5 | DMA_HIFCR_CTEIF5 | DMA_HIFCR_CDMEIF5 | DMA_HIFCR_CFEIF5 ; // Write ones to clear bits
       AUDIO_DMA_Stream->M0AR = CONVERT_PTR_UINT(nextBuffer->data);
@@ -154,7 +153,7 @@ extern "C" void AUDIO_DMA_Stream_IRQHandler()
     DAC->SR = DAC_SR_DMAUDR1;                      // Write 1 to clear flag
   }
   else {
-    dacIdle = true;
+    // dacIdle = true;
   }
 }
 #endif  // #if !defined(SIMU)
