@@ -127,6 +127,10 @@ extern "C" void DAC_IRQHandler()
         DACC->DACC_PTCR = DACC_PTCR_TXTEN;
         return;
       }
+      // we have new buffer, but the ADC can't take it now
+      // set nextBuffer to zero in order to prevent the buffer
+      // being freed on the next invocation of this function
+      nextBuffer = 0;
     }
     else {
       if ((DACC->DACC_TCR == 0) && (DACC->DACC_TNCR == 0)) {
