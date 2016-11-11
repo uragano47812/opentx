@@ -105,35 +105,21 @@ void audioConsumeCurrentBuffer()
   }
 }
 
-
 extern "C" void DAC_IRQHandler()
 {
   uint32_t sr = DACC->DACC_ISR;
   if (sr & DACC_ISR_ENDTX) {
-    if (nextBuffer) audioQueue.buffersFifo.freeNextFilledBuffer();
-    nextBuffer = audioQueue.buffersFifo.getNextFilledBuffer();
-    if (nextBuffer) {
-      // Try the first PDC buffer
-      if ((DACC->DACC_TCR == 0) && (DACC->DACC_TNCR == 0)) {
+    // We can only use one PDC buffer, because buffersFifo
+    // can't give us two buffers, only one buffer at the time
+    if (DACC->DACC_TCR == 0) {
+      if (nextBuffer) audioQueue.buffersFifo.freeNextFilledBuffer();
+      nextBuffer = audioQueue.buffersFifo.getNextFilledBuffer();
+      if (nextBuffer) {
         DACC->DACC_TPR = CONVERT_PTR_UINT(nextBuffer->data);
         DACC->DACC_TCR = nextBuffer->size/2;
         DACC->DACC_PTCR = DACC_PTCR_TXTEN;
-        return;
       }
-      // Try the second PDC buffer
-      if (DACC->DACC_TNCR == 0) {
-        DACC->DACC_TNPR = CONVERT_PTR_UINT(nextBuffer->data);
-        DACC->DACC_TNCR = nextBuffer->size/2;
-        DACC->DACC_PTCR = DACC_PTCR_TXTEN;
-        return;
-      }
-      // we have new buffer, but the ADC can't take it now
-      // set nextBuffer to zero in order to prevent the buffer
-      // being freed on the next invocation of this function
-      nextBuffer = 0;
-    }
-    else {
-      if ((DACC->DACC_TCR == 0) && (DACC->DACC_TNCR == 0)) {
+      else {
         dacStop();
       }
     }
