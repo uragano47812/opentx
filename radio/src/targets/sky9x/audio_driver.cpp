@@ -111,7 +111,6 @@ extern "C" void DAC_IRQHandler()
   uint32_t sr = DACC->DACC_ISR;
   if (sr & DACC_ISR_ENDTX) {
     if (nextBuffer) audioQueue.buffersFifo.freeNextFilledBuffer();
-
     nextBuffer = audioQueue.buffersFifo.getNextFilledBuffer();
     if (nextBuffer) {
       // Try the first PDC buffer
@@ -130,7 +129,9 @@ extern "C" void DAC_IRQHandler()
       }
     }
     else {
-      dacStop();
+      if ((DACC->DACC_TCR == 0) && (DACC->DACC_TNCR == 0)) {
+        dacStop();
+      }
     }
   }
 }
