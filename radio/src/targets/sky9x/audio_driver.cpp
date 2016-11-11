@@ -97,8 +97,9 @@ void dacInit()
 void audioConsumeCurrentBuffer()
 {
   if (nextBuffer == 0) {
-    nextBuffer = audioQueue.buffersFifo.getNextFilledBuffer();
-    if (nextBuffer) {
+    // just check if data is available, the nextBuffer
+    // will be assigned in the DAC_IRQHandler()
+    if (audioQueue.buffersFifo.getNextFilledBuffer()) {
       dacStart();
     }
   }
