@@ -791,7 +791,7 @@ static int luaPlayTone(lua_State * L)
 }
 
 /*luadoc
-@function luaPlayHaptic(duration, pause [, flags])
+@function playHaptic(duration, pause [, flags])
 
 Generate haptic feedback
 
@@ -1017,7 +1017,7 @@ static int luaDefaultStick(lua_State * L)
   return 1;
 }
 
-/* luadoc
+/*luadoc
 @function setTelemetryValue(id, subID, instance, value [, unit] [, precision [, name])
 
 @param id Id of the sensor
